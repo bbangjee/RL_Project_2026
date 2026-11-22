@@ -1,0 +1,1 @@
+{"score": 23.891, "success90": 0.1025, "caught": 0.725, "ai_frac": 0.5149247334520175, "model": "results/a2c_seed2.pt", "name": "a2c", "algo": "a2c", "seed": 2, "steps": 2000000}

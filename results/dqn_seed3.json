@@ -1,0 +1,1 @@
+{"score": 69.444, "success90": 0.084, "caught": 0.0895, "ai_frac": 0.2371135998131769, "model": "results/dqn_seed3.pt", "name": "dqn", "algo": "dqn", "seed": 3, "steps": 2000000}

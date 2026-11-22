@@ -1,0 +1,1 @@
+{"score": 61.098, "success90": 0.15, "caught": 0.262, "ai_frac": 0.35098663654052165, "model": "results/ppo_seed1.pt", "name": "ppo", "algo": "ppo", "seed": 1, "steps": 2000000}
