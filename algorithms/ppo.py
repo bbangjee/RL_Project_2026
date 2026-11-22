@@ -1,12 +1,12 @@
-"""최소 PPO (직접 구현). 하이퍼파라미터 기본값은 sweeps.py의 BASE["ppo"].
-실행: python ppo.py --steps 500000 --seed 0 --ent 0.05"""
+"""최소 PPO (직접 구현). 하이퍼파라미터 기본값은 experiments/sweeps.py의 BASE["ppo"].
+실행: python -m algorithms.ppo --steps 500000 --seed 0 --ent 0.05"""
 import argparse
 import numpy as np
 import torch
 import torch.nn as nn
-from exam_env import ExamEnv
-from rules import evaluate
-from sweeps import BASE
+from environment.exam_env import ExamEnv
+from experiments.sweeps import BASE
+from visualization.rules import evaluate
 
 
 def mlp(out):

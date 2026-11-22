@@ -1,6 +1,9 @@
-"""sweeps.py에 정의된 실험을 CPU 코어 병렬로 실행. 실행: python run_experiments.py --workers 24
+"""sweeps.py에 정의된 실험을 CPU 코어 병렬로 실행.
+
+실행: python -m experiments.run_experiments --workers 24
 결과: results/<이름>_seed<n>.json, .log, .pt. 이미 끝난 실행은 건너뜀(중단 후 재실행 가능).
-특정 그룹만: python run_experiments.py --only E1"""
+특정 그룹만: python -m experiments.run_experiments --only E1
+"""
 import argparse
 import importlib
 import json
@@ -8,22 +11,29 @@ import os
 import re
 import time
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from pathlib import Path
+
 import numpy as np
-from sweeps import BASE, SEEDS, STEPS, SWEEPS, run_name
 from tqdm import tqdm
 
-OUT = "results"
+from experiments.sweeps import BASE, SEEDS, STEPS, SWEEPS, run_name
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "results"
 STEP_RE = re.compile(r"^step\s+(\d+)")
 
 
 def run(algo, override, seed, steps):
     name = run_name(algo, override)
-    train = importlib.import_module(algo).train
-    with open(f"{OUT}/{name}_seed{seed}.log", "w", encoding="utf-8") as f:
-        res = train(steps, seed, OUT, name, lambda s: (f.write(s + "\n"), f.flush()),
+    train = importlib.import_module(f"algorithms.{algo}").train
+    with (OUT / f"{name}_seed{seed}.log").open("w", encoding="utf-8") as f:
+        res = train(steps, seed, str(OUT), name, lambda s: (f.write(s + "\n"), f.flush()),
                     **{**BASE[algo], **override})
+    model_path = Path(res["model"])
+    if model_path.is_relative_to(ROOT):
+        res["model"] = str(model_path.relative_to(ROOT))
     res.update(name=name, algo=algo, seed=seed, steps=steps, **override)
-    with open(f"{OUT}/{name}_seed{seed}.json", "w") as f:
+    with (OUT / f"{name}_seed{seed}.json").open("w", encoding="utf-8") as f:
         json.dump(res, f)
     return f"{name}_seed{seed}", res
 
@@ -35,11 +45,11 @@ def bootstrap_ci(x, n=10000, seed=0):
 
 def latest_step(name, seed, started_at):
     """현재 실행에서 log에 기록된 마지막 환경 step을 반환한다."""
-    path = f"{OUT}/{name}_seed{seed}.log"
-    if not os.path.exists(path) or os.path.getmtime(path) < started_at - 1:
+    path = OUT / f"{name}_seed{seed}.log"
+    if not path.exists() or path.stat().st_mtime < started_at - 1:
         return 0
     step = 0
-    with open(path, encoding="utf-8") as f:
+    with path.open(encoding="utf-8") as f:
         for line in f:
             if match := STEP_RE.match(line):
                 step = int(match.group(1))
@@ -52,7 +62,8 @@ def summary(groups):
               f"{'90점+':>8}{'적발률':>8}{'AI비율':>8}")
         for algo, ov in SWEEPS[g]:
             name = run_name(algo, ov)
-            rs = [json.load(open(p)) for s in SEEDS if os.path.exists(p := f"{OUT}/{name}_seed{s}.json")]
+            paths = [OUT / f"{name}_seed{s}.json" for s in SEEDS]
+            rs = [json.loads(path.read_text(encoding="utf-8")) for path in paths if path.exists()]
             if not rs:
                 continue
             sc = np.array([r["score"] for r in rs])
@@ -70,7 +81,7 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", nargs="*", type=int, default=SEEDS,
                     help="실행할 seed 목록 (기본값: 0 1 2 3 4)")
     args = ap.parse_args()
-    os.makedirs(OUT, exist_ok=True)
+    OUT.mkdir(exist_ok=True)
 
     groups = [g for g in SWEEPS if args.only is None or any(g.startswith(o) for o in args.only)]
     jobs = {}  # 같은 설정이 여러 그룹에 있으면 한 번만
@@ -78,7 +89,7 @@ if __name__ == "__main__":
         for algo, ov in SWEEPS[g]:
             for s in args.seeds:
                 key = (run_name(algo, ov), s)
-                if key not in jobs and not os.path.exists(f"{OUT}/{key[0]}_seed{s}.json"):
+                if key not in jobs and not (OUT / f"{key[0]}_seed{s}.json").exists():
                     jobs[key] = (algo, ov, s)
     print(f"실행할 작업 {len(jobs)}개, 워커 {args.workers}개")
     if jobs:

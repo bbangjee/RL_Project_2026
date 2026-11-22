@@ -1,9 +1,12 @@
 """학습 곡선과 에피소드 재생 시각화. 결과는 figures/ 폴더에 저장.
-python visualize.py curves                      -> figures/curves_E1.png, curves_E4.png, curves_E5.png
-python visualize.py replay dqn_seed0 --seed 3   -> figures/replay_dqn_seed0_ep3.gif (results/dqn_seed0.pt 사용)"""
+
+python -m visualization.visualize curves
+python -m visualization.visualize replay dqn_seed0 --seed 3
+"""
 import argparse
-import os
 import re
+from pathlib import Path
+
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -12,9 +15,13 @@ from matplotlib import font_manager
 from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.patches import Circle, Rectangle, Wedge
 import torch
-from exam_env import ExamEnv, ANGLES, POINTS, FOV, T
-from sweeps import SEEDS, SWEEPS, run_name
-from ppo import mlp
+from algorithms.ppo import mlp
+from environment.exam_env import ANGLES, FOV, POINTS, T, ExamEnv
+from experiments.sweeps import SEEDS, SWEEPS, run_name
+
+ROOT = Path(__file__).resolve().parents[1]
+RESULTS = ROOT / "results"
+FIGURES = ROOT / "figures"
 
 # 한글 글꼴 (없으면 기본 글꼴, 한글이 네모로 보일 수 있음)
 _fonts = {f.name for f in font_manager.fontManager.ttflist}
@@ -41,7 +48,7 @@ def curves(out):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.2))
         for algo, ov in items:
             name = run_name(algo, ov)
-            logs = [read_log(p) for s in SEEDS if os.path.exists(p := f"results/{name}_seed{s}.log")]
+            logs = [read_log(p) for s in SEEDS if (p := RESULTS / f"{name}_seed{s}.log").exists()]
             logs = [l for l in logs if len(l)]
             if not logs:
                 continue
@@ -87,7 +94,7 @@ def rollout(model_path, seed):
 
 
 def replay(name, seed, out, fps):
-    frames, info = rollout(f"results/{name}.pt", seed)
+    frames, info = rollout(RESULTS / f"{name}.pt", seed)
     n = len(frames)
     z = np.array([f["z"] for f in frames])
     acts = np.array([f["a"] for f in frames])
@@ -139,7 +146,7 @@ def replay(name, seed, out, fps):
     end = "적발 (0점)" if info["caught"] else f"정상 종료, 실제 점수 {info['score']}점"
     fig.suptitle(f"에피소드 seed {seed}  ·  결과: {end}  ·  AI 비율 {info['ai_frac']:.0%}", fontsize=12)
     anim = FuncAnimation(fig, draw, frames=n, interval=1000 // fps)
-    path = f"{out}/replay_{name}_ep{seed}.gif"
+    path = Path(out) / f"replay_{name}_ep{seed}.gif"
     anim.save(path, writer=PillowWriter(fps=fps), dpi=80)
     plt.close(fig)
     print(f"저장: {path}  ({n}분, {end})")
@@ -152,8 +159,8 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int, default=0, help="replay할 에피소드 seed (자리, 문제 순서, 감독관이 바뀜)")
     ap.add_argument("--fps", type=int, default=6)
     args = ap.parse_args()
-    os.makedirs("figures", exist_ok=True)
+    FIGURES.mkdir(exist_ok=True)
     if args.what == "curves":
-        curves("figures")
+        curves(FIGURES)
     else:
-        replay(args.name, args.seed, "figures", args.fps)
+        replay(args.name, args.seed, FIGURES, args.fps)

@@ -1,6 +1,6 @@
-"""규칙 정책으로 환경 수치 점검. 실행: python rules.py"""
+"""규칙 정책으로 환경 수치 점검. 실행: python -m visualization.rules"""
 import numpy as np
-from exam_env import ExamEnv, ANGLES, FOV
+from environment.exam_env import ANGLES, FOV, ExamEnv
 
 
 def evaluate(policy, n=2000, seed=12345, env_kwargs=None):

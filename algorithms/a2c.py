@@ -1,9 +1,13 @@
-"""최소 A2C (직접 구현, n-step return). 기본값은 sweeps.py의 BASE["a2c"]. 실행: python a2c.py --steps 2000000 --seed 0"""
+"""최소 A2C (직접 구현, n-step return).
+
+기본값은 experiments/sweeps.py의 BASE["a2c"].
+실행: python -m algorithms.a2c --steps 2000000 --seed 0
+"""
 import numpy as np
 import torch
 import torch.nn as nn
-from exam_env import ExamEnv
-from ppo import mlp, finish, cli
+from algorithms.ppo import mlp, finish, cli
+from environment.exam_env import ExamEnv
 
 
 def train(steps, seed=0, out=".", name="a2c", log=print, *,

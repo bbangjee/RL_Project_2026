@@ -59,7 +59,7 @@ Windows PowerShell에서는 가상환경을 다음 명령으로 활성화합니�
 ### 1. Baseline policies
 
 ```bash
-python3 rules.py
+python3 -m visualization.rules
 ```
 
 다음 고정 정책의 평균 점수, 90점 이상 달성률, 적발률과 AI 사용 비율을 평가합니다.
@@ -75,7 +75,7 @@ python3 rules.py
 DQN, PPO, A2C를 각각 5개 random seed에서 2,000,000 environment steps 동안 학습합니다.
 
 ```bash
-python3 run_experiments.py --only E1 --workers 3
+python3 -m experiments.run_experiments --only E1 --workers 3
 ```
 
 ### 3. AI accuracy sensitivity
@@ -83,7 +83,7 @@ python3 run_experiments.py --only E1 --workers 3
 4점 문제의 AI 정확도를 85%, 90%, 95%로 변경하여 PPO를 학습합니다. 기존 결과가 있으면 자동으로 건너뜁니다.
 
 ```bash
-python3 run_experiments.py --only E2 --workers 3
+python3 -m experiments.run_experiments --only E2 --workers 3
 ```
 
 ### 4. 90-point reward bonus sensitivity
@@ -91,20 +91,20 @@ python3 run_experiments.py --only E2 --workers 3
 90점 이상 달성 보너스를 비교합니다. 4점 문제 AI 정확도는 95%로 고정합니다.
 
 ```bash
-python3 run_experiments.py --only E3 --workers 3
+python3 -m experiments.run_experiments --only E3 --workers 3
 ```
 
 ### 5. PPO hyperparameter sweeps
 
 ```bash
 # discount factor: 0.99, 0.995, 1.0
-python3 run_experiments.py --only E4 --workers 3
+python3 -m experiments.run_experiments --only E4 --workers 3
 
 # entropy coefficient: 0.01, 0.05, 0.1
-python3 run_experiments.py --only E5 --workers 3
+python3 -m experiments.run_experiments --only E5 --workers 3
 
 # 두 실험을 한 번에 실행
-python3 run_experiments.py --only E4 E5 --workers 3
+python3 -m experiments.run_experiments --only E4 E5 --workers 3
 ```
 
 `--workers`는 동시에 실행할 CPU process 수입니다. 각 학습 process는 PyTorch thread 하나를 사용합니다.
@@ -112,9 +112,9 @@ python3 run_experiments.py --only E4 E5 --workers 3
 ### 6. Train one model
 
 ```bash
-python3 ppo.py --steps 2000000 --seed 0
-python3 a2c.py --steps 2000000 --seed 0
-python3 dqn.py --steps 2000000 --seed 0
+python3 -m algorithms.ppo --steps 2000000 --seed 0
+python3 -m algorithms.a2c --steps 2000000 --seed 0
+python3 -m algorithms.dqn --steps 2000000 --seed 0
 ```
 
 ## Evaluation
@@ -174,7 +174,7 @@ GitHub에서 `.pt` 파일을 선택한 뒤 `Download raw file`을 누르면 학�
 학습 곡선을 다시 생성합니다.
 
 ```bash
-python3 plot_training_curves.py
+python3 -m visualization.plot_training_curves
 ```
 
 결과:
@@ -183,10 +183,17 @@ python3 plot_training_curves.py
 - `figures/training_score.png`
 - `figures/training_detection.png`
 
+민감도 실험 그래프를 다시 생성합니다.
+
+```bash
+python3 -m visualization.plot_accuracy_sensitivity
+python3 -m visualization.plot_reward_bonus_sensitivity
+```
+
 저장된 모델의 에피소드 행동을 GIF로 시각화합니다.
 
 ```bash
-python3 visualize.py replay dqn_seed0 --seed 3
+python3 -m visualization.visualize replay dqn_seed0 --seed 3
 ```
 
 결과는 `figures/replay_dqn_seed0_ep3.gif`에 저장됩니다.
@@ -195,17 +202,23 @@ python3 visualize.py replay dqn_seed0 --seed 3
 
 ```text
 .
-├── exam_env.py              # 2D 시험실 환경
-├── rules.py                 # baseline policies 및 평가
-├── dqn.py                   # DQN 구현
-├── ppo.py                   # PPO 구현
-├── a2c.py                   # A2C 구현
-├── sweeps.py                # 실험 설정과 hyperparameters
-├── run_experiments.py       # 병렬 학습 및 결과 집계
-├── plot_training_curves.py  # 발표용 학습 곡선 생성
-├── visualize.py             # 학습 곡선과 에피소드 GIF 생성
-├── results/                 # model, metric, training log
-└── figures/                 # graph 및 animation
+├── environment/
+│   └── exam_env.py                  # 2D 시험실 환경
+├── algorithms/
+│   ├── dqn.py                       # DQN 구현
+│   ├── ppo.py                       # PPO 구현
+│   └── a2c.py                       # A2C 구현
+├── experiments/
+│   ├── sweeps.py                    # 실험 설정과 hyperparameters
+│   └── run_experiments.py           # 병렬 학습 및 결과 집계
+├── visualization/
+│   ├── rules.py                     # baseline policies 및 평가
+│   ├── visualize.py                 # 학습 곡선과 에피소드 GIF 생성
+│   ├── plot_training_curves.py      # 학습 과정 그래프
+│   ├── plot_accuracy_sensitivity.py # AI 정확도 민감도 그래프
+│   └── plot_reward_bonus_sensitivity.py # 보너스 민감도 그래프
+├── results/                         # model, metric, training log
+└── figures/                         # graph 및 animation
 ```
 
 ## Reproducibility
@@ -213,6 +226,6 @@ python3 visualize.py replay dqn_seed0 --seed 3
 - 학습 seed: `0, 1, 2, 3, 4`
 - 기본 학습 예산: 알고리즘별 2,000,000 environment steps
 - 공통 할인율: `gamma = 0.995`
-- 기본 결과와 sweep 설정: [`sweeps.py`](./sweeps.py)
+- 기본 결과와 sweep 설정: [`experiments/sweeps.py`](./experiments/sweeps.py)
 
 동일한 명령을 다시 실행하면 이미 완료된 `.json` 결과는 건너뛰고 미완료 작업만 실행합니다.

@@ -8,7 +8,7 @@ from matplotlib.ticker import FuncFormatter
 import numpy as np
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 FIGURES = ROOT / "figures"
 FIGURES.mkdir(exist_ok=True)

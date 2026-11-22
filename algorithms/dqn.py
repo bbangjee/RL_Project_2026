@@ -1,11 +1,14 @@
-"""최소 DQN (직접 구현, target network + replay buffer). 기본값은 sweeps.py의 BASE["dqn"].
-실행: python dqn.py --steps 2000000 --seed 0"""
+"""최소 DQN (직접 구현, target network + replay buffer).
+
+기본값은 experiments/sweeps.py의 BASE["dqn"].
+실행: python -m algorithms.dqn --steps 2000000 --seed 0
+"""
 import copy
 import numpy as np
 import torch
 import torch.nn as nn
-from exam_env import ExamEnv
-from ppo import mlp, finish, cli
+from algorithms.ppo import mlp, finish, cli
+from environment.exam_env import ExamEnv
 
 
 def train(steps, seed=0, out=".", name="dqn", log=print, *,
