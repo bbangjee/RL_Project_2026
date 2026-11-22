@@ -4,16 +4,23 @@ from exam_env import ExamEnv, ANGLES, FOV
 
 
 def evaluate(policy, n=2000, seed=12345):
-    """policy(obs, env) -> action. 평균 점수, 적발률, AI 사용 비율을 반환."""
+    """policy(obs, env) -> action.
+
+    평균 점수, 90점 이상 달성률, 적발률, AI 사용 비율을 반환한다.
+    90점 이상 달성은 적발되지 않고 최종 점수가 90점 이상인 경우다.
+    """
     env = ExamEnv(seed)
-    scores, caught, ai = [], [], []
+    scores, success90, caught, ai = [], [], [], []
     for _ in range(n):
         obs, _ = env.reset()
         done = False
         while not done:
             obs, _, done, _, info = env.step(policy(obs, env))
-        scores.append(info["score"]); caught.append(info["caught"]); ai.append(info["ai_frac"])
-    return np.mean(scores), np.mean(caught), np.mean(ai)
+        scores.append(info["score"])
+        success90.append(not info["caught"] and info["score"] >= 90)
+        caught.append(info["caught"])
+        ai.append(info["ai_frac"])
+    return np.mean(scores), np.mean(success90), np.mean(caught), np.mean(ai)
 
 
 def safe_next_step(env):
@@ -32,12 +39,12 @@ RULES = {
     "랜덤": lambda o, e: int(rng.random() < 0.5),
     "정직 (항상 직접)": lambda o, e: 0,
     "항상 AI": lambda o, e: 1,
-    "안 볼 때 AI": lambda o, e: int(not e.in_view()),
-    "타이밍 규칙 (설계자)": lambda o, e: int(safe_next_step(e)),
+    "현재 시야 밖이면 AI": lambda o, e: int(not e.in_view()),
+    "안전 타이밍 정책": lambda o, e: int(safe_next_step(e)),
 }
 
 if __name__ == "__main__":
-    print(f"{'정책':<20}{'점수':>8}{'적발률':>8}{'AI비율':>8}")
+    print(f"{'정책':<20}{'점수':>8}{'90점+':>8}{'적발률':>8}{'AI비율':>8}")
     for name, pol in RULES.items():
-        s, c, a = evaluate(pol)
-        print(f"{name:<20}{s:8.1f}{c:8.1%}{a:8.1%}")
+        s, s90, c, a = evaluate(pol)
+        print(f"{name:<20}{s:8.1f}{s90:8.1%}{c:8.1%}{a:8.1%}")

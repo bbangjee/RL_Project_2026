@@ -5,16 +5,15 @@ T = 100                                # 시험 시간 100분 (1스텝 = 1분)
 GAMMA = 0.995
 POINTS = np.array([2, 3, 4])           # 배점 인덱스 0, 1, 2
 COUNT = np.array([3, 14, 13])          # 배점별 문항 수 (합 30, 100점)
-SOLVE_TIME = np.array([2, 3, 6])       # 직접 풀기 시간
+SOLVE_TIME = np.array([2, 4, 10])      # 직접 풀기 시간
 SOLVE_ACC = np.array([0.83, 0.68, 0.35])
-AI_TIME = np.array([1, 1, 2])          # AI 안경 사용 시간
 AI_ACC = np.array([0.98, 0.95, 0.85])
 ANGLES = np.array([-60, -30, 0, 30, 60])  # 감독관 고개 5구역
 FOV = 30                               # 시야: 각도 차이 30도 이내
 
 
 class ExamEnv:
-    obs_dim = 17
+    obs_dim = 16
     n_actions = 2  # 0: 직접 풀기, 1: AI 안경 사용하기 
 
     def __init__(self, seed=None):
@@ -31,7 +30,7 @@ class ExamEnv:
         self.t = 0
         self.order = r.permutation(np.repeat([0, 1, 2], COUNT))  # 문제 순서 (배점 인덱스)
         self.k = 0            # 현재 문제 번호
-        self.prog = [0, 0]    # [직접 진행도, AI 진행도]
+        self.solve_prog = 0   # 현재 문제의 직접 풀이 진행도
         self.expected = 0.0   # 기대 점수 (state용)
         self.score = 0        # 실제 점수 (보상용)
         self.ai_steps = 0
@@ -71,15 +70,21 @@ class ExamEnv:
         else:
             self.z = max(0.0, self.z - 0.05)
 
-        # 진행도 +1, 다 차면 그 방법의 정답률로 채점하고 다음 문제로
+        # 직접 풀이는 진행도가 필요 시간에 도달하면 완료한다.
+        # AI는 모든 문제를 한 스텝에 완료하며, 위 적발 판정을 통과해야 한다.
         p = self.order[self.k]
-        self.prog[a] += 1
-        if self.prog[a] >= (SOLVE_TIME, AI_TIME)[a][p]:
+        if a == 0:
+            self.solve_prog += 1
+            completed = self.solve_prog >= SOLVE_TIME[p]
+        else:
+            completed = True
+
+        if completed:
             acc = (SOLVE_ACC, AI_ACC)[a][p]
             self.expected += POINTS[p] * acc
             self.score += POINTS[p] * int(r.random() < acc)
             self.k += 1
-            self.prog = [0, 0]
+            self.solve_prog = 0
             if self.k < 30:
                 self.left[self.order[self.k]] -= 1
 
@@ -98,9 +103,8 @@ class ExamEnv:
             ANGLES[self.head] / 60, self.omega,    # 5, 6 고개 각도, 훑는 방향
             self.z,                                # 7 의심도
             *(np.arange(3) == p),                  # 8~10 현재 문제 배점 one-hot
-            self.prog[0] / SOLVE_TIME[p],          # 11 직접 진행도
-            self.prog[1] / AI_TIME[p],             # 12 AI 진행도
-            1 - self.t / T,                        # 13 남은 시간
-            self.expected / 100,                   # 14 기대 점수
-            *(self.left / COUNT),                  # 15~17 배점별 남은 문제 수
+            self.solve_prog / SOLVE_TIME[p],        # 11 직접 진행도
+            1 - self.t / T,                        # 12 남은 시간
+            self.expected / 100,                   # 13 기대 점수
+            *(self.left / COUNT),                  # 14~16 배점별 남은 문제 수
         ], dtype=np.float32)

@@ -26,9 +26,11 @@ def finish(net, path, log):
     def greedy(o, e):
         return int(net(torch.as_tensor(o)).argmax())
 
-    s, c, ai = evaluate(greedy)
-    log(f"\n[평가 2000판, greedy] 점수 {s:.1f} | 적발률 {c:.1%} | AI 비율 {ai:.1%} | 저장: {path}")
-    return {"score": float(s), "caught": float(c), "ai_frac": float(ai), "model": path}
+    s, s90, c, ai = evaluate(greedy)
+    log(f"\n[평가 2000판, greedy] 점수 {s:.1f} | 90점+ {s90:.1%} | "
+        f"적발률 {c:.1%} | AI 비율 {ai:.1%} | 저장: {path}")
+    return {"score": float(s), "success90": float(s90), "caught": float(c),
+            "ai_frac": float(ai), "model": path}
 
 
 def train(steps, seed=0, out=".", name="ppo", log=print, *,

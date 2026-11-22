@@ -31,7 +31,8 @@ def bootstrap_ci(x, n=10000, seed=0):
 
 def summary(groups):
     for g in groups:
-        print(f"\n[{g}]\n{'실행':<18}{'n':>3}{'점수 평균':>10}{'95% CI':>18}{'적발률':>8}{'AI비율':>8}")
+        print(f"\n[{g}]\n{'실행':<18}{'n':>3}{'점수 평균':>10}{'95% CI':>18}"
+              f"{'90점+':>8}{'적발률':>8}{'AI비율':>8}")
         for algo, ov in SWEEPS[g]:
             name = run_name(algo, ov)
             rs = [json.load(open(p)) for s in SEEDS if os.path.exists(p := f"{OUT}/{name}_seed{s}.json")]
@@ -40,6 +41,7 @@ def summary(groups):
             sc = np.array([r["score"] for r in rs])
             lo, hi = bootstrap_ci(sc)
             print(f"{name:<18}{len(rs):>3}{sc.mean():10.1f}   [{lo:5.1f}, {hi:5.1f}]"
+                  f"{np.mean([r['success90'] for r in rs]):8.1%}"
                   f"{np.mean([r['caught'] for r in rs]):8.1%}{np.mean([r['ai_frac'] for r in rs]):8.1%}")
 
 
@@ -64,5 +66,6 @@ if __name__ == "__main__":
         futs = [pool.submit(run, algo, ov, s, args.steps) for algo, ov, s in jobs.values()]
         for i, fut in enumerate(as_completed(futs), 1):
             n, r = fut.result()
-            print(f"[{i}/{len(jobs)}] {n}: 점수 {r['score']:.1f}, 적발률 {r['caught']:.1%}")
+            print(f"[{i}/{len(jobs)}] {n}: 점수 {r['score']:.1f}, "
+                  f"90점+ {r['success90']:.1%}, 적발률 {r['caught']:.1%}")
     summary(groups)
