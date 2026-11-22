@@ -6,8 +6,8 @@
 
 | 이름 | 학번 |
 |---|---:|
-| 방지혁 | 120260611 |
-| 김태환 | 120260201 |
+| 방지혁 | 12026***1 |
+| 김태환 | 12026***1 |
 
 - GitHub: <https://github.com/bbangjee/RL_Project_2026>
 
@@ -208,7 +208,3 @@ python3 visualize.py replay dqn_seed0 --seed 3
 - 기본 결과와 sweep 설정: [`sweeps.py`](./sweeps.py)
 
 동일한 명령을 다시 실행하면 이미 완료된 `.json` 결과는 건너뛰고 미완료 작업만 실행합니다.
-
-## Report
-
-최종 PPT/PDF 보고서는 프로젝트 주제와 목표, 환경 설계, 알고리즘, hyperparameter, 실험 설정, 결과 분석과 개선 방향을 포함하여 저장소 루트에 함께 제출합니다.
