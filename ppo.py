@@ -34,10 +34,11 @@ def finish(net, path, log, env_kwargs=None):
 
 
 def train(steps, seed=0, out=".", name="ppo", log=print, *,
-          lr, gamma, ent, n_steps, epochs, minibatch, lam, clip, ai_acc_4):
+          lr, gamma, ent, n_steps, epochs, minibatch, lam, clip, ai_acc_4,
+          reward_bonus):
     torch.set_num_threads(1)  # 병렬 실행 시 프로세스마다 스레드 1개
     torch.manual_seed(seed)
-    env = ExamEnv(seed, ai_acc_4=ai_acc_4)
+    env = ExamEnv(seed, ai_acc_4=ai_acc_4, reward_bonus=reward_bonus)
     actor, critic = mlp(ExamEnv.n_actions), mlp(1)
     params = [*actor.parameters(), *critic.parameters()]
     opt = torch.optim.Adam(params, lr=lr)
@@ -101,7 +102,7 @@ def train(steps, seed=0, out=".", name="ppo", log=print, *,
                 f"clip {clipfrac:.2f} | vloss {v_loss.item():.4f}")
 
     return finish(actor, f"{out}/{name}_seed{seed}.pt", log,
-                  env_kwargs={"ai_acc_4": ai_acc_4})
+                  env_kwargs={"ai_acc_4": ai_acc_4, "reward_bonus": reward_bonus})
 
 
 def cli(algo, train_fn):

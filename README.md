@@ -86,7 +86,15 @@ python3 run_experiments.py --only E1 --workers 3
 python3 run_experiments.py --only E2 --workers 3
 ```
 
-### 4. PPO hyperparameter sweeps
+### 4. 90-point reward bonus sensitivity
+
+90점 이상 달성 보너스를 비교합니다. 4점 문제 AI 정확도는 95%로 고정합니다.
+
+```bash
+python3 run_experiments.py --only E3 --workers 3
+```
+
+### 5. PPO hyperparameter sweeps
 
 ```bash
 # discount factor: 0.99, 0.995, 1.0
@@ -101,7 +109,7 @@ python3 run_experiments.py --only E4 E5 --workers 3
 
 `--workers`는 동시에 실행할 CPU process 수입니다. 각 학습 process는 PyTorch thread 하나를 사용합니다.
 
-### 5. Train one model
+### 6. Train one model
 
 ```bash
 python3 ppo.py --steps 2000000 --seed 0
