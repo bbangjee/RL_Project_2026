@@ -16,8 +16,10 @@ class ExamEnv:
     obs_dim = 16
     n_actions = 2  # 0: 직접 풀기, 1: AI 안경 사용하기 
 
-    def __init__(self, seed=None):
+    def __init__(self, seed=None, ai_acc_4=0.85):
         self.rng = np.random.default_rng(seed)
+        self.ai_acc = AI_ACC.copy()
+        self.ai_acc[2] = ai_acc_4
 
     def reset(self, seed=None):
         if seed is not None:
@@ -80,7 +82,7 @@ class ExamEnv:
             completed = True
 
         if completed:
-            acc = (SOLVE_ACC, AI_ACC)[a][p]
+            acc = (SOLVE_ACC, self.ai_acc)[a][p]
             self.expected += POINTS[p] * acc
             self.score += POINTS[p] * int(r.random() < acc)
             self.k += 1

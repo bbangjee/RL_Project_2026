@@ -9,11 +9,12 @@ from ppo import mlp, finish, cli
 
 
 def train(steps, seed=0, out=".", name="dqn", log=print, *,
-          lr, gamma, buf_size, batch, warmup, train_every, target_every, eps_frac):
+          lr, gamma, buf_size, batch, warmup, train_every, target_every, eps_frac,
+          ai_acc_4):
     torch.set_num_threads(1)
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    env = ExamEnv(seed)
+    env = ExamEnv(seed, ai_acc_4=ai_acc_4)
     q = mlp(ExamEnv.n_actions)
     q_target = copy.deepcopy(q)
     opt = torch.optim.Adam(q.parameters(), lr=lr)
@@ -59,7 +60,8 @@ def train(steps, seed=0, out=".", name="dqn", log=print, *,
             log(f"step {t + 1:>8} | 점수 {np.mean(scores[-100:]):5.1f} | 적발 {np.mean(caught[-100:]):5.1%} | "
                 f"eps {eps:.2f} | loss {loss.item():.5f}")
 
-    return finish(q, f"{out}/{name}_seed{seed}.pt", log)
+    return finish(q, f"{out}/{name}_seed{seed}.pt", log,
+                  env_kwargs={"ai_acc_4": ai_acc_4})
 
 
 if __name__ == "__main__":

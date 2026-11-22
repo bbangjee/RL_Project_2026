@@ -18,7 +18,7 @@ def mlp(out):
         nn.Linear(64, out))
 
 
-def finish(net, path, log):
+def finish(net, path, log, env_kwargs=None):
     """모델 저장 후 학습과 분리된 평가 에피소드 2000판으로 greedy 평가. PPO, A2C, DQN 공통."""
     torch.save(net.state_dict(), path)
 
@@ -26,7 +26,7 @@ def finish(net, path, log):
     def greedy(o, e):
         return int(net(torch.as_tensor(o)).argmax())
 
-    s, s90, c, ai = evaluate(greedy)
+    s, s90, c, ai = evaluate(greedy, env_kwargs=env_kwargs)
     log(f"\n[평가 2000판, greedy] 점수 {s:.1f} | 90점+ {s90:.1%} | "
         f"적발률 {c:.1%} | AI 비율 {ai:.1%} | 저장: {path}")
     return {"score": float(s), "success90": float(s90), "caught": float(c),
@@ -34,10 +34,10 @@ def finish(net, path, log):
 
 
 def train(steps, seed=0, out=".", name="ppo", log=print, *,
-          lr, gamma, ent, n_steps, epochs, minibatch, lam, clip):
+          lr, gamma, ent, n_steps, epochs, minibatch, lam, clip, ai_acc_4):
     torch.set_num_threads(1)  # 병렬 실행 시 프로세스마다 스레드 1개
     torch.manual_seed(seed)
-    env = ExamEnv(seed)
+    env = ExamEnv(seed, ai_acc_4=ai_acc_4)
     actor, critic = mlp(ExamEnv.n_actions), mlp(1)
     params = [*actor.parameters(), *critic.parameters()]
     opt = torch.optim.Adam(params, lr=lr)
@@ -100,7 +100,8 @@ def train(steps, seed=0, out=".", name="ppo", log=print, *,
                 f"적발 {np.mean(ep_caught[-100:]):5.1%} | ent {entropy.item():.3f} | kl {kl:.4f} | "
                 f"clip {clipfrac:.2f} | vloss {v_loss.item():.4f}")
 
-    return finish(actor, f"{out}/{name}_seed{seed}.pt", log)
+    return finish(actor, f"{out}/{name}_seed{seed}.pt", log,
+                  env_kwargs={"ai_acc_4": ai_acc_4})
 
 
 def cli(algo, train_fn):

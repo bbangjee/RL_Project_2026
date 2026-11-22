@@ -6,11 +6,12 @@ from exam_env import ExamEnv
 from ppo import mlp, finish, cli
 
 
-def train(steps, seed=0, out=".", name="a2c", log=print, *, lr, gamma, ent, n_steps):
+def train(steps, seed=0, out=".", name="a2c", log=print, *,
+          lr, gamma, ent, n_steps, ai_acc_4):
     n = n_steps
     torch.set_num_threads(1)
     torch.manual_seed(seed)
-    env = ExamEnv(seed)
+    env = ExamEnv(seed, ai_acc_4=ai_acc_4)
     actor, critic = mlp(ExamEnv.n_actions), mlp(1)
     params = [*actor.parameters(), *critic.parameters()]
     opt = torch.optim.Adam(params, lr=lr)
@@ -55,7 +56,8 @@ def train(steps, seed=0, out=".", name="a2c", log=print, *, lr, gamma, ent, n_st
             log(f"step {(update + 1) * n:>8} | 점수 {np.mean(scores[-100:]):5.1f} | "
                 f"적발 {np.mean(caught[-100:]):5.1%} | ent {entropy.item():.3f}")
 
-    return finish(actor, f"{out}/{name}_seed{seed}.pt", log)
+    return finish(actor, f"{out}/{name}_seed{seed}.pt", log,
+                  env_kwargs={"ai_acc_4": ai_acc_4})
 
 
 if __name__ == "__main__":

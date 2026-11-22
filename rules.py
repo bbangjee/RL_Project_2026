@@ -3,13 +3,13 @@ import numpy as np
 from exam_env import ExamEnv, ANGLES, FOV
 
 
-def evaluate(policy, n=2000, seed=12345):
+def evaluate(policy, n=2000, seed=12345, env_kwargs=None):
     """policy(obs, env) -> action.
 
     평균 점수, 90점 이상 달성률, 적발률, AI 사용 비율을 반환한다.
     90점 이상 달성은 적발되지 않고 최종 점수가 90점 이상인 경우다.
     """
-    env = ExamEnv(seed)
+    env = ExamEnv(seed, **(env_kwargs or {}))
     scores, success90, caught, ai = [], [], [], []
     for _ in range(n):
         obs, _ = env.reset()
